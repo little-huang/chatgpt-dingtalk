@@ -1,12 +1,14 @@
 package chatgpt
 
 import (
+	"fmt"
 	"context"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/eryajf/chatgpt-dingtalk/public"
+	"github.com/eryajf/chatgpt-dingtalk/pkg/logger"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -34,7 +36,9 @@ func New(userId string) *ChatGPT {
 		<-ctx.Done()
 		timeOutChan <- struct{}{} // 发送超时信号，或是提示结束，用于聊天机器人场景，配合GetTimeOutChan() 使用
 	}()
-
+  
+	logger.Info(fmt.Sprintf("public.config %v", public.Config))
+  
 	config := openai.DefaultConfig(public.Config.ApiKey)
 	if public.Config.AzureOn {
 		config = openai.DefaultAzureConfig(
