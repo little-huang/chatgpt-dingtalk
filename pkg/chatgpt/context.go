@@ -7,12 +7,14 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/eryajf/chatgpt-dingtalk/pkg/dingbot"
-	"github.com/pandodao/tokenizer-go"
 	"image/png"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/eryajf/chatgpt-dingtalk/pkg/dingbot"
+	"github.com/eryajf/chatgpt-dingtalk/pkg/logger"
+	"github.com/pandodao/tokenizer-go"
 
 	"github.com/eryajf/chatgpt-dingtalk/public"
 	openai "github.com/sashabaranov/go-openai"
@@ -137,6 +139,9 @@ func (c *ChatContext) SetPreset(preset string) {
 }
 
 func (c *ChatGPT) ChatWithContext(question string) (answer string, err error) {
+
+	logger.Info("ChatWithContext: ", question)
+
 	question = question + "."
 	if tokenizer.MustCalToken(question) > c.maxQuestionLen {
 		return "", OverMaxQuestionLength
@@ -181,7 +186,14 @@ func (c *ChatGPT) ChatWithContext(question string) (answer string, err error) {
 			Temperature: 0.6,
 			User:        c.userId,
 		}
+
+		logger.Info("ChatWithContext: CreateChatCompletion req: ", req)
+
 		resp, err := c.client.CreateChatCompletion(c.ctx, req)
+
+		logger.Info("ChatWithContext: CreateChatCompletion resp: ", resp)
+		logger.Info("ChatWithContext: CreateChatCompletion err: ", err)
+
 		if err != nil {
 			return "", err
 		}
