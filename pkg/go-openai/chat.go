@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	"github.com/eryajf/chatgpt-dingtalk/pkg/logger"
 )
 
 // Chat message role defined by the OpenAI API.
@@ -77,11 +79,21 @@ func (c *Client) CreateChatCompletion(
 		return
 	}
 
+	logger.Info("CreateChatCompletion ctx", ctx)
+	logger.Info("CreateChatCompletion fullURL", c.fullURL(urlSuffix))
+	logger.Info("CreateChatCompletion request", request)
+
 	req, err := c.requestBuilder.build(ctx, http.MethodPost, c.fullURL(urlSuffix), request)
+
+	logger.Info("CreateChatCompletion err", err)
+
 	if err != nil {
 		return
 	}
 
 	err = c.sendRequest(req, &response)
+  
+	logger.Info("CreateChatCompletion sendRequest err", err)
+  
 	return
 }
