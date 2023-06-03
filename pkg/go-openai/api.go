@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/eryajf/chatgpt-dingtalk/pkg/logger"
 )
 
 // Client is OpenAI GPT-3 API client.
@@ -41,6 +43,10 @@ func NewOrgClient(authToken, org string) *Client {
 func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	req.Header.Set("Accept", "application/json; charset=utf-8")
 	// Azure API Key authentication
+
+	logger.Info(fmt.Sprintf("c.config.APIType %v", c.config.APIType))
+	logger.Info(fmt.Sprintf("c.config.authToken %v", c.config.authToken))
+
 	if c.config.APIType == APITypeAzure {
 		req.Header.Set(AzureAPIKeyHeader, c.config.authToken)
 	} else {
@@ -58,6 +64,8 @@ func (c *Client) sendRequest(req *http.Request, v interface{}) error {
 	if len(c.config.OrgID) > 0 {
 		req.Header.Set("OpenAI-Organization", c.config.OrgID)
 	}
+
+	logger.Info(fmt.Sprintf("req %v", req))
 
 	res, err := c.config.HTTPClient.Do(req)
 	if err != nil {
