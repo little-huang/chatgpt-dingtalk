@@ -68,3 +68,4 @@ require (
 )
 
 replace github.com/solywsh/chatgpt => ./pkg/chatgpt
+replace github.com/sashabaranov/go-openai => ./pkg/go-openai
