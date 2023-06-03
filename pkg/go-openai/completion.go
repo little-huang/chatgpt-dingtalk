@@ -9,7 +9,7 @@ import (
 var (
 	ErrCompletionUnsupportedModel              = errors.New("this model is not supported with this method, please use CreateChatCompletion client method instead") //nolint:lll
 	ErrCompletionStreamNotSupported            = errors.New("streaming is not supported with this method, please use CreateCompletionStream")                      //nolint:lll
-	ErrCompletionRequestPromptTypeNotSupported = errors.New("the type of CompletionRequest.Prompt only supports string and []string")                              //nolint:lll
+	ErrCompletionRequestPromptTypeNotSupported = errors.New("the type of CompletionRequest.Promp only supports string and []string")                               //nolint:lll
 )
 
 // GPT3 Defines the models provided by OpenAI to use when generating
@@ -155,7 +155,7 @@ func (c *Client) CreateCompletion(
 		return
 	}
 
-	req, err := c.requestBuilder.Build(ctx, http.MethodPost, c.fullURL(urlSuffix, request.Model), request)
+	req, err := c.requestBuilder.build(ctx, http.MethodPost, c.fullURL(urlSuffix), request)
 	if err != nil {
 		return
 	}

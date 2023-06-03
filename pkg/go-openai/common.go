@@ -1,6 +1,5 @@
-package openai
-
 // common.go defines common types used throughout the OpenAI API.
+package openai
 
 // Usage Represents the total token usage per request to OpenAI.
 type Usage struct {

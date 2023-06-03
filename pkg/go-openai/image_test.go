@@ -1,7 +1,7 @@
-package openai //nolint:testpackage // testing private field
+package openai_test
 
 import (
-	utils "github.com/sashabaranov/go-openai/internal"
+	. "github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/internal/test"
 	"github.com/sashabaranov/go-openai/internal/test/checks"
 
@@ -119,12 +119,11 @@ func TestImageEdit(t *testing.T) {
 	}()
 
 	req := ImageEditRequest{
-		Image:          origin,
-		Mask:           mask,
-		Prompt:         "There is a turtle in the pool",
-		N:              3,
-		Size:           CreateImageSize1024x1024,
-		ResponseFormat: CreateImageResponseFormatURL,
+		Image:  origin,
+		Mask:   mask,
+		Prompt: "There is a turtle in the pool",
+		N:      3,
+		Size:   CreateImageSize1024x1024,
 	}
 	_, err = client.CreateEditImage(ctx, req)
 	checks.NoError(t, err, "CreateImage error")
@@ -156,11 +155,10 @@ func TestImageEditWithoutMask(t *testing.T) {
 	}()
 
 	req := ImageEditRequest{
-		Image:          origin,
-		Prompt:         "There is a turtle in the pool",
-		N:              3,
-		Size:           CreateImageSize1024x1024,
-		ResponseFormat: CreateImageResponseFormatURL,
+		Image:  origin,
+		Prompt: "There is a turtle in the pool",
+		N:      3,
+		Size:   CreateImageSize1024x1024,
 	}
 	_, err = client.CreateEditImage(ctx, req)
 	checks.NoError(t, err, "CreateImage error")
@@ -223,10 +221,9 @@ func TestImageVariation(t *testing.T) {
 	}()
 
 	req := ImageVariRequest{
-		Image:          origin,
-		N:              3,
-		Size:           CreateImageSize1024x1024,
-		ResponseFormat: CreateImageResponseFormatURL,
+		Image: origin,
+		N:     3,
+		Size:  CreateImageSize1024x1024,
 	}
 	_, err = client.CreateVariImage(ctx, req)
 	checks.NoError(t, err, "CreateImage error")
@@ -261,145 +258,4 @@ func handleVariateImageEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	resBytes, _ = json.Marshal(responses)
 	fmt.Fprintln(w, string(resBytes))
-}
-
-type mockFormBuilder struct {
-	mockCreateFormFile func(string, *os.File) error
-	mockWriteField     func(string, string) error
-	mockClose          func() error
-}
-
-func (fb *mockFormBuilder) CreateFormFile(fieldname string, file *os.File) error {
-	return fb.mockCreateFormFile(fieldname, file)
-}
-
-func (fb *mockFormBuilder) WriteField(fieldname, value string) error {
-	return fb.mockWriteField(fieldname, value)
-}
-
-func (fb *mockFormBuilder) Close() error {
-	return fb.mockClose()
-}
-
-func (fb *mockFormBuilder) FormDataContentType() string {
-	return ""
-}
-
-func TestImageFormBuilderFailures(t *testing.T) {
-	config := DefaultConfig("")
-	config.BaseURL = ""
-	client := NewClientWithConfig(config)
-
-	mockBuilder := &mockFormBuilder{}
-	client.createFormBuilder = func(io.Writer) utils.FormBuilder {
-		return mockBuilder
-	}
-	ctx := context.Background()
-
-	req := ImageEditRequest{
-		Mask: &os.File{},
-	}
-
-	mockFailedErr := fmt.Errorf("mock form builder fail")
-	mockBuilder.mockCreateFormFile = func(string, *os.File) error {
-		return mockFailedErr
-	}
-	_, err := client.CreateEditImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
-
-	mockBuilder.mockCreateFormFile = func(name string, file *os.File) error {
-		if name == "mask" {
-			return mockFailedErr
-		}
-		return nil
-	}
-	_, err = client.CreateEditImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
-
-	mockBuilder.mockCreateFormFile = func(name string, file *os.File) error {
-		return nil
-	}
-
-	var failForField string
-	mockBuilder.mockWriteField = func(fieldname, value string) error {
-		if fieldname == failForField {
-			return mockFailedErr
-		}
-		return nil
-	}
-
-	failForField = "prompt"
-	_, err = client.CreateEditImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
-
-	failForField = "n"
-	_, err = client.CreateEditImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
-
-	failForField = "size"
-	_, err = client.CreateEditImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
-
-	failForField = "response_format"
-	_, err = client.CreateEditImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
-
-	failForField = ""
-	mockBuilder.mockClose = func() error {
-		return mockFailedErr
-	}
-	_, err = client.CreateEditImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
-}
-
-func TestVariImageFormBuilderFailures(t *testing.T) {
-	config := DefaultConfig("")
-	config.BaseURL = ""
-	client := NewClientWithConfig(config)
-
-	mockBuilder := &mockFormBuilder{}
-	client.createFormBuilder = func(io.Writer) utils.FormBuilder {
-		return mockBuilder
-	}
-	ctx := context.Background()
-
-	req := ImageVariRequest{}
-
-	mockFailedErr := fmt.Errorf("mock form builder fail")
-	mockBuilder.mockCreateFormFile = func(string, *os.File) error {
-		return mockFailedErr
-	}
-	_, err := client.CreateVariImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateVariImage should return error if form builder fails")
-
-	mockBuilder.mockCreateFormFile = func(name string, file *os.File) error {
-		return nil
-	}
-
-	var failForField string
-	mockBuilder.mockWriteField = func(fieldname, value string) error {
-		if fieldname == failForField {
-			return mockFailedErr
-		}
-		return nil
-	}
-
-	failForField = "n"
-	_, err = client.CreateVariImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateVariImage should return error if form builder fails")
-
-	failForField = "size"
-	_, err = client.CreateVariImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateVariImage should return error if form builder fails")
-
-	failForField = "response_format"
-	_, err = client.CreateVariImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateVariImage should return error if form builder fails")
-
-	failForField = ""
-	mockBuilder.mockClose = func() error {
-		return mockFailedErr
-	}
-	_, err = client.CreateVariImage(ctx, req)
-	checks.ErrorIs(t, err, mockFailedErr, "CreateImage should return error if form builder fails")
 }

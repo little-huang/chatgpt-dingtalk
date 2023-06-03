@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 
-	utils "github.com/sashabaranov/go-openai/internal"
 	"github.com/sashabaranov/go-openai/internal/test"
 	"github.com/sashabaranov/go-openai/internal/test/checks"
 )
@@ -34,7 +32,7 @@ func (b *failingErrorBuffer) Bytes() []byte {
 	return []byte{}
 }
 
-func (*failingUnMarshaller) Unmarshal(_ []byte, _ any) error {
+func (*failingUnMarshaller) unmarshal(_ []byte, _ any) error {
 	return errTestUnmarshalerFailed
 }
 
@@ -63,7 +61,7 @@ func TestErrorAccumulatorReturnsUnmarshalerErrors(t *testing.T) {
 func TestErrorByteWriteErrors(t *testing.T) {
 	accumulator := &defaultErrorAccumulator{
 		buffer:      &failingErrorBuffer{},
-		unmarshaler: &utils.JSONUnmarshaler{},
+		unmarshaler: &jsonUnmarshaler{},
 	}
 	err := accumulator.write([]byte("{"))
 	if !errors.Is(err, errTestErrorAccumulatorWriteFailed) {
@@ -73,11 +71,7 @@ func TestErrorByteWriteErrors(t *testing.T) {
 
 func TestErrorAccumulatorWriteErrors(t *testing.T) {
 	var err error
-	server := test.NewTestServer()
-	server.RegisterHandler("/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "error", 200)
-	})
-	ts := server.OpenAITestServer()
+	ts := test.NewTestServer().OpenAITestServer()
 	ts.Start()
 	defer ts.Close()
 
@@ -92,7 +86,7 @@ func TestErrorAccumulatorWriteErrors(t *testing.T) {
 
 	stream.errAccumulator = &defaultErrorAccumulator{
 		buffer:      &failingErrorBuffer{},
-		unmarshaler: &utils.JSONUnmarshaler{},
+		unmarshaler: &jsonUnmarshaler{},
 	}
 
 	_, err = stream.Recv()

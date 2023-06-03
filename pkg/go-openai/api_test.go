@@ -1,17 +1,14 @@
 package openai_test
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
-
 	. "github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/internal/test/checks"
+
+	"context"
+	"errors"
+	"io"
+	"os"
+	"testing"
 )
 
 func TestAPI(t *testing.T) {
@@ -113,128 +110,29 @@ func TestAPIError(t *testing.T) {
 	c := NewClient(apiToken + "_invalid")
 	ctx := context.Background()
 	_, err = c.ListEngines(ctx)
-	checks.HasError(t, err, "ListEngines should fail with an invalid key")
+	checks.NoError(t, err, "ListEngines did not fail")
 
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("Error is not an APIError: %+v", err)
 	}
 
-	if apiErr.HTTPStatusCode != 401 {
-		t.Fatalf("Unexpected API error status code: %d", apiErr.HTTPStatusCode)
+	if apiErr.StatusCode != 401 {
+		t.Fatalf("Unexpected API error status code: %d", apiErr.StatusCode)
 	}
-
-	switch v := apiErr.Code.(type) {
-	case string:
-		if v != "invalid_api_key" {
-			t.Fatalf("Unexpected API error code: %s", v)
-		}
-	default:
-		t.Fatalf("Unexpected API error code type: %T", v)
+	if *apiErr.Code != "invalid_api_key" {
+		t.Fatalf("Unexpected API error code: %s", *apiErr.Code)
 	}
-
 	if apiErr.Error() == "" {
 		t.Fatal("Empty error message occurred")
 	}
 }
 
-func TestAPIErrorUnmarshalJSONInteger(t *testing.T) {
-	var apiErr APIError
-	response := `{"code":418,"message":"I'm a teapot","param":"prompt","type":"teapot_error"}`
-	err := json.Unmarshal([]byte(response), &apiErr)
-	checks.NoError(t, err, "Unexpected Unmarshal API response error")
-
-	switch v := apiErr.Code.(type) {
-	case int:
-		if v != 418 {
-			t.Fatalf("Unexpected API code integer: %d; expected 418", v)
-		}
-	default:
-		t.Fatalf("Unexpected API error code type: %T", v)
-	}
-}
-
-func TestAPIErrorUnmarshalJSONString(t *testing.T) {
-	var apiErr APIError
-	response := `{"code":"teapot","message":"I'm a teapot","param":"prompt","type":"teapot_error"}`
-	err := json.Unmarshal([]byte(response), &apiErr)
-	checks.NoError(t, err, "Unexpected Unmarshal API response error")
-
-	switch v := apiErr.Code.(type) {
-	case string:
-		if v != "teapot" {
-			t.Fatalf("Unexpected API code string: %s; expected `teapot`", v)
-		}
-	default:
-		t.Fatalf("Unexpected API error code type: %T", v)
-	}
-}
-
-func TestAPIErrorUnmarshalJSONNoCode(t *testing.T) {
-	// test integer code
-	response := `{"message":"I'm a teapot","param":"prompt","type":"teapot_error"}`
-	var apiErr APIError
-	err := json.Unmarshal([]byte(response), &apiErr)
-	checks.NoError(t, err, "Unexpected Unmarshal API response error")
-
-	switch v := apiErr.Code.(type) {
-	case nil:
-	default:
-		t.Fatalf("Unexpected API error code type: %T", v)
-	}
-}
-
-func TestAPIErrorUnmarshalInvalidData(t *testing.T) {
-	apiErr := APIError{}
-	data := []byte(`--- {"code":418,"message":"I'm a teapot","param":"prompt","type":"teapot_error"}`)
-	err := apiErr.UnmarshalJSON(data)
-	checks.HasError(t, err, "Expected error when unmarshaling invalid data")
-
-	if apiErr.Code != nil {
-		t.Fatalf("Expected nil code, got %q", apiErr.Code)
-	}
-	if apiErr.Message != "" {
-		t.Fatalf("Expected empty message, got %q", apiErr.Message)
-	}
-	if apiErr.Param != nil {
-		t.Fatalf("Expected nil param, got %q", *apiErr.Param)
-	}
-	if apiErr.Type != "" {
-		t.Fatalf("Expected empty type, got %q", apiErr.Type)
-	}
-}
-
-func TestAPIErrorUnmarshalJSONInvalidParam(t *testing.T) {
-	var apiErr APIError
-	response := `{"code":418,"message":"I'm a teapot","param":true,"type":"teapot_error"}`
-	err := json.Unmarshal([]byte(response), &apiErr)
-	checks.HasError(t, err, "Param should be a string")
-}
-
-func TestAPIErrorUnmarshalJSONInvalidType(t *testing.T) {
-	var apiErr APIError
-	response := `{"code":418,"message":"I'm a teapot","param":"prompt","type":true}`
-	err := json.Unmarshal([]byte(response), &apiErr)
-	checks.HasError(t, err, "Type should be a string")
-}
-
-func TestAPIErrorUnmarshalJSONInvalidMessage(t *testing.T) {
-	var apiErr APIError
-	response := `{"code":418,"message":false,"param":"prompt","type":"teapot_error"}`
-	err := json.Unmarshal([]byte(response), &apiErr)
-	checks.HasError(t, err, "Message should be a string")
-}
-
 func TestRequestError(t *testing.T) {
 	var err error
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusTeapot)
-	}))
-	defer ts.Close()
-
 	config := DefaultConfig("dummy")
-	config.BaseURL = ts.URL
+	config.BaseURL = "https://httpbin.org/status/418?"
 	c := NewClientWithConfig(config)
 	ctx := context.Background()
 	_, err = c.ListEngines(ctx)
@@ -245,8 +143,8 @@ func TestRequestError(t *testing.T) {
 		t.Fatalf("Error is not a RequestError: %+v", err)
 	}
 
-	if reqErr.HTTPStatusCode != 418 {
-		t.Fatalf("Unexpected request error status code: %d", reqErr.HTTPStatusCode)
+	if reqErr.StatusCode != 418 {
+		t.Fatalf("Unexpected request error status code: %d", reqErr.StatusCode)
 	}
 
 	if reqErr.Unwrap() == nil {

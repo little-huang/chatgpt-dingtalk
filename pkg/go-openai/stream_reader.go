@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	utils "github.com/sashabaranov/go-openai/internal"
 )
 
 type streamable interface {
@@ -21,7 +19,7 @@ type streamReader[T streamable] struct {
 	reader         *bufio.Reader
 	response       *http.Response
 	errAccumulator errorAccumulator
-	unmarshaler    utils.Unmarshaler
+	unmarshaler    unmarshaler
 }
 
 func (stream *streamReader[T]) Recv() (response T, err error) {
@@ -65,7 +63,7 @@ waitForData:
 		return
 	}
 
-	err = stream.unmarshaler.Unmarshal(line, &response)
+	err = stream.unmarshaler.unmarshal(line, &response)
 	return
 }
 

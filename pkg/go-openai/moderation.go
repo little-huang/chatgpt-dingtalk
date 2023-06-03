@@ -5,23 +5,10 @@ import (
 	"net/http"
 )
 
-// The moderation endpoint is a tool you can use to check whether content complies with OpenAI's usage policies.
-// Developers can thus identify content that our usage policies prohibits and take action, for instance by filtering it.
-
-// The default is text-moderation-latest which will be automatically upgraded over time.
-// This ensures you are always using our most accurate model.
-// If you use text-moderation-stable, we will provide advanced notice before updating the model.
-// Accuracy of text-moderation-stable may be slightly lower than for text-moderation-latest.
-const (
-	ModerationTextStable = "text-moderation-stable"
-	ModerationTextLatest = "text-moderation-latest"
-	ModerationText001    = "text-moderation-001"
-)
-
 // ModerationRequest represents a request structure for moderation API.
 type ModerationRequest struct {
-	Input string `json:"input,omitempty"`
-	Model string `json:"model,omitempty"`
+	Input string  `json:"input,omitempty"`
+	Model *string `json:"model,omitempty"`
 }
 
 // Result represents one of possible moderation results.
@@ -63,7 +50,7 @@ type ModerationResponse struct {
 // Moderations — perform a moderation api call over a string.
 // Input can be an array or slice but a string will reduce the complexity.
 func (c *Client) Moderations(ctx context.Context, request ModerationRequest) (response ModerationResponse, err error) {
-	req, err := c.requestBuilder.Build(ctx, http.MethodPost, c.fullURL("/moderations", request.Model), request)
+	req, err := c.requestBuilder.build(ctx, http.MethodPost, c.fullURL("/moderations"), request)
 	if err != nil {
 		return
 	}

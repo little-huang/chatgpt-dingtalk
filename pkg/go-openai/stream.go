@@ -4,9 +4,6 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"net/http"
-
-	utils "github.com/sashabaranov/go-openai/internal"
 )
 
 var (
@@ -37,7 +34,7 @@ func (c *Client) CreateCompletionStream(
 	}
 
 	request.Stream = true
-	req, err := c.newStreamRequest(ctx, "POST", urlSuffix, request, request.Model)
+	req, err := c.newStreamRequest(ctx, "POST", urlSuffix, request)
 	if err != nil {
 		return
 	}
@@ -46,9 +43,6 @@ func (c *Client) CreateCompletionStream(
 	if err != nil {
 		return
 	}
-	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest {
-		return nil, c.handleErrorResp(resp)
-	}
 
 	stream = &CompletionStream{
 		streamReader: &streamReader[CompletionResponse]{
@@ -56,7 +50,7 @@ func (c *Client) CreateCompletionStream(
 			reader:             bufio.NewReader(resp.Body),
 			response:           resp,
 			errAccumulator:     newErrorAccumulator(),
-			unmarshaler:        &utils.JSONUnmarshaler{},
+			unmarshaler:        &jsonUnmarshaler{},
 		},
 	}
 	return

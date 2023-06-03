@@ -1,4 +1,4 @@
-name: Sanity check
+name: PR sanity check
 
 on:
   - push
@@ -6,7 +6,7 @@ on:
 
 jobs:
   prcheck:
-    name: Sanity check
+    name: PR sanity check
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
