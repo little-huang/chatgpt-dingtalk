@@ -139,9 +139,9 @@ func (c *ChatContext) SetPreset(preset string) {
 }
 
 func (c *ChatGPT) ChatWithContext(question string) (answer string, err error) {
-  
+
 	logger.Info("ChatWithContext: ", question)
-  
+
 	question = question + "."
 	if tokenizer.MustCalToken(question) > c.maxQuestionLen {
 		return "", OverMaxQuestionLength
@@ -184,7 +184,7 @@ func (c *ChatGPT) ChatWithContext(question string) (answer string, err error) {
 			},
 			MaxTokens:   c.maxAnswerLen,
 			Temperature: 0.6,
-			User:        c.userId,
+			// User:        c.userId,
 		}
 
 		logger.Info("ChatWithContext: CreateChatCompletion req: ", req)
