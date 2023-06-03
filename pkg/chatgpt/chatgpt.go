@@ -40,6 +40,9 @@ func New(userId string) *ChatGPT {
 	logger.Info(fmt.Sprintf("public.config %v", public.Config))
   
 	config := openai.DefaultConfig(public.Config.ApiKey)
+  
+	logger.Info(fmt.Sprintf(" public.Config.AzureOn %v", public.Config.AzureOn))
+  
 	if public.Config.AzureOn {
 		config = openai.DefaultAzureConfig(
 			public.Config.AzureOpenAIToken,
