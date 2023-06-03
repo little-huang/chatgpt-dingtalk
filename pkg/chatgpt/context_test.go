@@ -3,6 +3,9 @@ package chatgpt
 import (
 	"os"
 	"testing"
+
+	"github.com/eryajf/chatgpt-dingtalk/pkg/logger"
+	"github.com/eryajf/chatgpt-dingtalk/public"
 )
 
 func TestOfflineContext(t *testing.T) {
@@ -70,6 +73,32 @@ func TestMaintainContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("你知道我是谁吗? => %s", reply)
+
+	// 对话次数已经超过 1 次，因此最先前的对话已被移除，AI 理应不知道他叫老三
+	// assert.NotContains(t, reply, "老三")
+}
+
+func TestChatWithContext(t *testing.T) {
+
+	logger.Logger.Info(`TestChatWithContext`)
+
+	public.InitSvc()
+	logger.InitLogger(public.Config.LogLevel)
+
+	cli := New("")
+
+	cli.ChatContext = NewContext(
+		WithMaxSeqTimes(1),
+		WithMaintainSeqTimes(true),
+	)
+
+	reply, err := cli.ChatWithContext("我叫老三，你是？")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("我叫老三，你是？ => %s", reply)
 
 	// 对话次数已经超过 1 次，因此最先前的对话已被移除，AI 理应不知道他叫老三
 	// assert.NotContains(t, reply, "老三")

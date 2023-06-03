@@ -47,6 +47,9 @@ func New(userId string) *ChatGPT {
 				"azure.com/",
 			public.Config.AzureDeploymentName,
 		)
+    
+		logger.Info(fmt.Sprintf(" DefaultAzureConfig %v", config))
+
 	} else {
 		if public.Config.HttpProxy != "" {
 			config.HTTPClient.Transport = &http.Transport{
